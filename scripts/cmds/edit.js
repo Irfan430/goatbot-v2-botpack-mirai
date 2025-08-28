@@ -9,6 +9,7 @@ module.exports = {
     premium: true,
     countDown: 5,
     role: 0,
+    cost: "100",
     shortDescription: {
       en: "Edit image with girl behind",
     },

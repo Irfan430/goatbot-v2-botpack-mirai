@@ -199,42 +199,52 @@ module.exports = {
         }
 
         const configCommand = command.config;
-        const roleText = roleTextToString(configCommand.role);
-        const author = configCommand.author || "Unknown";
-        const description = configCommand.shortDescription?.en || configCommand.longDescription?.en || "No description available.";
-        const longDescription = configCommand.longDescription?.en || description;
-        const guideBody = configCommand.guide?.en || "No guide available.";
-        const usage = guideBody.replace(/{pn}/g, prefix + configCommand.name).replace(/{p}/g, prefix);
-        const aliasesList = configCommand.aliases ? configCommand.aliases.join(", ") : "None";
+              const roleText = roleTextToString(configCommand.role);
+              const author = configCommand.author || "Unknown";
+              const description = configCommand.shortDescription?.en || configCommand.longDescription?.en || "No description available.";
+              const longDescription = configCommand.longDescription?.en || description;
+              const guideBody = configCommand.guide?.en || "No guide available.";
+              const usage = guideBody.replace(/{pn}/g, prefix + configCommand.name).replace(/{p}/g, prefix);
+              const aliasesList = configCommand.aliases ? configCommand.aliases.join(", ") : "None";
 
-        const response =
-          `╔══════════════════════╗\n` +
-          `║    🎀 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 🎀    ║\n` +
-          `╚══════════════════════╝\n\n` +
-          `❖ 𝗡𝗮𝗺𝗲: ${configCommand.name}\n` +
-          `❖ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻: ${description}\n\n` +
-          `📋 𝗗𝗲𝘁𝗮𝗶𝗹𝘀:\n` +
-          `• 𝗔𝗹𝗶𝗮𝘀𝗲𝘀: ${aliasesList}\n` +
-          `• 𝗔𝘂𝘁𝗵𝗼𝗿: ${author}\n` +
-          `• 𝗩𝗲𝗿𝘀𝗶𝗼𝗻: ${configCommand.version || "1.0"}\n` +
-          `• 𝗥𝗼𝗹𝗲: ${roleText}\n` +
-          `• 𝗖𝗼𝗼𝗹𝗱𝗼𝘄𝗻: ${configCommand.countDown || 1}s\n\n` +
-          `📖 𝗨𝘀𝗮𝗴𝗲:\n${usage}\n\n` +
-          `📝 𝗡𝗼𝘁𝗲𝘀:\n${longDescription}\n\n` +
-          `▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n` +
-          `🌟 𝗕𝗼𝘁 𝗯𝘆: 𝗛𝗼𝗽𝗲𝗹𝗲𝘀𝘀 𝗡𝗶𝗹`;
+              // 🌟 Add Premium, Dev, usePrefix, Cost
+              const premium = configCommand.premium === true ? "✅ Yes" : "❌ No";
+              const dev = configCommand.dev === true ? "👑 Yes" : "❌ No";
+              const usePrefix = configCommand.usePrefix === false ? "❌ No (can run without prefix)" : "✅ Yes";
+              const cost = configCommand.cost ? `💰 ${configCommand.cost}` : "Free";
 
-        await message.reply(response);
+              const response =
+                `╔══════════════════════╗\n` +
+                `║   🎀 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 🎀   ║\n` +
+                `╚══════════════════════╝\n\n` +
+                `✨ 𝗡𝗮𝗺𝗲: ${toFancyFont(configCommand.name)}\n` +
+                `📜 𝗗𝗲𝘀𝗰: ${description}\n\n` +
+                `📋 𝗗𝗲𝘁𝗮𝗶𝗹𝘀:\n` +
+                `• Aliases: ${aliasesList}\n` +
+                `• Author: ${author}\n` +
+                `• Version: ${configCommand.version || "1.0"}\n` +
+                `• Role: ${roleText}\n` +
+                `• Cooldown: ${configCommand.countDown || 1}s\n` +
+                `• Premium: ${premium}\n` +
+                `• Dev Only: ${dev}\n` +
+                `• Use Prefix: ${usePrefix}\n` +
+                `• Cost: ${cost}\n\n` +
+                `📖 𝗨𝘀𝗮𝗴𝗲:\n${usage}\n\n` +
+                `📝 Notes:\n${longDescription}\n\n` +
+                `▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n` +
+                `🌟 Bot by: Hopeless Nil`;
+
+              return await message.reply(response);
       }
     }
   },
 };
 
-function roleTextToString(roleText) {
-  switch (roleText) {
-    case 0: return "0 (All users)";
-    case 1: return "1 (Group admins)";
-    case 2: return "2 (Bot admins)";
-    default: return "Unknown role";
-  }
-}
+        function roleTextToString(roleText) {
+          switch (roleText) {
+            case 0: return "0 (All users)";
+            case 1: return "1 (Group admins)";
+            case 2: return "2 (Bot admins)";
+            default: return "Unknown role";
+          }
+        }

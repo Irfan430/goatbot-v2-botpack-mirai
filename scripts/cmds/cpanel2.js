@@ -7,10 +7,10 @@ const path = require("path");
 
 module.exports = {
   config: {
-    name: "cpanel",
-    version: "5.1",
-    author: "xnil",
-    description: "Generates a futuristic static hex system dashboard with color-changing borders.",
+    name: "cpanel2",
+    version: "4.8",
+    author: "Fahad Islam",
+    description: "Generates an animated hex-style system dashboard GIF.",
     usage: "cpanel",
     category: "system",
     role: 0
@@ -27,7 +27,7 @@ module.exports = {
 
       encoder.start();
       encoder.setRepeat(0);
-      encoder.setDelay(150); 
+      encoder.setDelay(150);
       encoder.setQuality(10);
 
       const canvas = createCanvas(width, height);
@@ -49,16 +49,20 @@ module.exports = {
           ["BOT UPTIME", formatUptime(process.uptime())],
           ["CPU CORES", os.cpus().length.toString()],
           ["NODE.JS", process.version],
+          ["DISK USAGE", "21.8%"],
           ["RAM USAGE", (usedMem / totalMem * 100).toFixed(1) + "%"],
           ["SYS UPTIME", formatUptime(uptime)],
-          ["CPU LOAD", os.loadavg()[0].toFixed(2)],
+          ["TOTAL DISK", "45.0 GB"],
+          ["CPU USAGE", os.loadavg()[0].toFixed(1) + "%"],
           ["TOTAL RAM", totalMem.toFixed(1) + " GB"]
         ];
       };
 
-      const neonColors = ["#00ffcc", "#ff55ff", "#ffaa00", "#55aaff", "#ff3355", "#00ffaa"];
+      const hexColors = ["#ffff55", "#55ff55", "#5599ff", "#cc55ff", "#aa7755"]; // 🟨 🟩 🟦 🟪 🟫
 
-      const drawHex = (x, y, r, label, value, color) => {
+      const drawHex = (x, y, label, value, alpha = 1, color = "#00ff99") => {
+        const r = 100;
+        ctx.globalAlpha = alpha;
         ctx.beginPath();
         for (let i = 0; i < 6; i++) {
           const angle = Math.PI / 3 * i;
@@ -75,18 +79,18 @@ module.exports = {
 
         ctx.shadowBlur = 0;
         ctx.fillStyle = "#ffffff";
-        ctx.font = "16px Arial";
+        ctx.font = "18px Arial";
         ctx.textAlign = "center";
         ctx.fillText(label, x, y - 10);
-        ctx.font = "bold 20px Arial";
+        ctx.font = "bold 22px Arial";
         ctx.fillText(value, x, y + 20);
+        ctx.globalAlpha = 1;
       };
 
       const cx = width / 2;
       const cy = height / 2;
       const spacing = 180;
 
-      // Fixed positions
       const positions = [
         [cx, cy - spacing],
         [cx + spacing, cy - spacing / 2],
@@ -94,30 +98,24 @@ module.exports = {
         [cx, cy + spacing],
         [cx - spacing, cy + spacing / 2],
         [cx - spacing, cy - spacing / 2],
-        [cx, cy]
+        [cx, cy],
+        [cx + spacing * 1.5, cy],
+        [cx - spacing * 1.5, cy]
       ];
 
-      for (let frame = 0; frame < 30; frame++) {
+      for (let frame = 0; frame < 10; frame++) {
         const stats = getSystemStats();
         ctx.clearRect(0, 0, width, height);
-
-        // Background gradient
-        const gradient = ctx.createLinearGradient(0, 0, width, height);
-        gradient.addColorStop(0, "#0f0f1b");
-        gradient.addColorStop(1, "#1a1a2e");
-        ctx.fillStyle = gradient;
+        ctx.fillStyle = "#0f0f1b";
         ctx.fillRect(0, 0, width, height);
 
-        // Title
         ctx.fillStyle = "#00ffcc";
-        ctx.font = "bold 36px Arial";
+        ctx.font = "bold 32px Arial";
         ctx.textAlign = "center";
-        ctx.shadowColor = "#00ffcc";
-        ctx.shadowBlur = 20;
-        ctx.fillText("YOUR POOKIEE BOT PANEL", width / 2, 70);
-        ctx.shadowBlur = 0;
+        ctx.fillText("", width / 2, 60);
+        ctx.font = "20px Arial";
+        ctx.fillText("", width / 2, 90);
 
-        // Datetime & OS
         ctx.font = "16px Arial";
         ctx.fillStyle = "#ffffff";
         ctx.textAlign = "right";
@@ -125,10 +123,10 @@ module.exports = {
         ctx.textAlign = "left";
         ctx.fillText(`OS: ${os.platform()} (x64)`, 30, 40);
 
-        // Draw hexagons in fixed position, only border color changes per frame
         for (let i = 0; i < stats.length; i++) {
-          const color = neonColors[(frame + i) % neonColors.length];
-          drawHex(positions[i][0], positions[i][1], 90, stats[i][0], stats[i][1], color);
+          const pulse = 0.5 + 0.5 * Math.sin((frame + i) / 2);
+          const color = hexColors[i % hexColors.length];
+          drawHex(positions[i][0], positions[i][1], stats[i][0], stats[i][1], pulse, color);
         }
 
         encoder.addFrame(ctx);

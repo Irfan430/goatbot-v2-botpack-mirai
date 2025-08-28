@@ -1,4 +1,3 @@
-const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const { createCanvas, loadImage } = require("canvas");
@@ -20,6 +19,7 @@ function toFullWidthBold(str) {
   return str.split('').map(c => map[c] || c).join('');
 }
 
+// Format Money (short version)
 function formatMoney(n) {
   const units = ["","K","M","B","T"];
   let i = 0;
@@ -27,6 +27,7 @@ function formatMoney(n) {
   return n.toFixed(1).replace(/\.0$/, '') + units[i];
 }
 
+// Hexagon Draw
 function drawHex(ctx, cx, cy, r) {
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
@@ -38,120 +39,241 @@ function drawHex(ctx, cx, cy, r) {
   ctx.closePath();
 }
 
+// Draw rounded rectangle
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+// Spy Card Generator
 async function createSpyCard(opts) {
   const {
     avatarUrl, name, uid, username, gender,
     type, birthday, nickname, location,
-    money, rank, moneyRank
+    money, rank, moneyRank,
+    isDev, isPremium
   } = opts;
 
-  const W = 490, H = 840;
+  const W = 520, H = 1000;
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#000";
+  // Create vibrant gradient background
+  const bgGradient = ctx.createLinearGradient(0, 0, W, H);
+  bgGradient.addColorStop(0, "#0f0c29");
+  bgGradient.addColorStop(0.5, "#24243e");
+  bgGradient.addColorStop(1, "#302b63");
+
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, W, H);
 
-  // Top & bottom glowing bars
-  const makeBar = (y, colors) => {
+  // Add glowing particles in background
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  for (let i = 0; i < 50; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const size = Math.random() * 3 + 1;
+    const colors = ["#ff00cc", "#00ffff", "#ffcc00", "#00ff66"];
+    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Top & Bottom Glowing Bars with animation effect
+  const makeBar = (y, colors, width = W - 40) => {
     ctx.save();
-    const grad = ctx.createLinearGradient(0, y, W, y);
+    const grad = ctx.createLinearGradient(0, y, width, y);
     colors.forEach(([stop, color]) => grad.addColorStop(stop, color));
     ctx.fillStyle = grad;
     ctx.shadowColor = colors[1][1];
-    ctx.shadowBlur = 20;
-    ctx.fillRect(20, y, W - 40, 4);
+    ctx.shadowBlur = 25;
+
+    // Draw rounded bar
+    drawRoundedRect(ctx, 20, y, width, 6, 3);
+    ctx.fill();
+
     ctx.restore();
   };
 
+  // Multiple animated bars
   makeBar(20, [[0, "#ff00cc"], [0.5, "#00ffff"], [1, "#00ff66"]]);
-  makeBar(H - 22, [[0, "#ff00cc"], [0.5, "#ffff00"], [1, "#00ffff"]]);
+  makeBar(30, [[0, "#ffcc00"], [0.5, "#ff00cc"], [1, "#00ffff"]], W - 80);
+  makeBar(H - 25, [[0, "#ff00cc"], [0.5, "#ffff00"], [1, "#00ffff"]]);
+  makeBar(H - 35, [[0, "#00ff66"], [0.5, "#ff00cc"], [1, "#ffcc00"]], W - 80);
 
-  // Side glow lines
-  const sideColors = ["#00ffcc", "#ff00ff", "#00ff99"];
-  const barWidths = [5, 3, 2];
-  for (let i = 0; i < sideColors.length; i++) {
-    ctx.fillStyle = sideColors[i];
-    ctx.fillRect(0, 60 + i, barWidths[i], H - 120 - i * 2);
-    ctx.fillRect(W - barWidths[i], 60 + i, barWidths[i], H - 120 - i * 2);
+  // Side Glow with gradient
+  const sideGradient = (y, height) => {
+    const grad = ctx.createLinearGradient(0, y, 0, y + height);
+    grad.addColorStop(0, "#00ffcc");
+    grad.addColorStop(0.5, "#ff00ff");
+    grad.addColorStop(1, "#00ff99");
+    return grad;
+  };
+
+  ctx.fillStyle = sideGradient(60, H - 120);
+  ctx.fillRect(0, 60, 5, H - 120);
+  ctx.fillRect(W - 5, 60, 5, H - 120);
+
+  ctx.fillStyle = sideGradient(65, H - 130);
+  ctx.fillRect(5, 65, 3, H - 130);
+  ctx.fillRect(W - 8, 65, 3, H - 130);
+
+  ctx.fillStyle = sideGradient(70, H - 140);
+  ctx.fillRect(8, 70, 2, H - 140);
+  ctx.fillRect(W - 10, 70, 2, H - 140);
+
+  // Avatar with glowing hexagon
+  let av;
+  try { 
+    av = await loadImage(avatarUrl); 
+  } catch (error) { 
+    console.error("Error loading avatar:", error);
+    av = await loadImage("https://i.imgur.com/I3VsBEt.png");
   }
 
-  // Avatar
-  let av;
-  try { av = await loadImage(avatarUrl); }
-  catch { av = await loadImage("https://i.imgur.com/I3VsBEt.png"); }
-  const r = 90, cx = W / 2, cy = 140;
+  const r = 95, cx = W / 2, cy = 150;
+
+  // Outer glow
   ctx.save();
+  const hexGradient = ctx.createRadialGradient(cx, cy, r, cx, cy, r + 15);
+  hexGradient.addColorStop(0, "rgba(255, 0, 204, 0.8)");
+  hexGradient.addColorStop(1, "rgba(255, 0, 204, 0)");
+
+  ctx.fillStyle = hexGradient;
   ctx.shadowColor = "#ff00ff";
-  ctx.shadowBlur = 25;
-  drawHex(ctx, cx, cy, r + 8);
+  ctx.shadowBlur = 30;
+  drawHex(ctx, cx, cy, r + 10);
   ctx.fill();
   ctx.restore();
 
+  // Inner hexagon with gradient border
   ctx.save();
+  const borderGradient = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+  borderGradient.addColorStop(0, "#ff00cc");
+  borderGradient.addColorStop(0.5, "#00ffff");
+  borderGradient.addColorStop(1, "#00ff66");
+
+  ctx.strokeStyle = borderGradient;
+  ctx.lineWidth = 4;
+  ctx.shadowColor = "#00ffff";
+  ctx.shadowBlur = 15;
   drawHex(ctx, cx, cy, r);
+  ctx.stroke();
+  ctx.restore();
+
+  // Avatar clip
+  ctx.save();
+  drawHex(ctx, cx, cy, r - 2);
   ctx.clip();
   ctx.drawImage(av, cx - r, cy - r, r * 2, r * 2);
   ctx.restore();
 
-  // Name
-  ctx.font = "bold 32px Arial";
+  // Name with vibrant gradient
+  ctx.font = "bold 20px 'Arial', sans-serif";
   ctx.textAlign = "center";
-  ctx.fillStyle = "#FFFF66";
-  ctx.shadowColor = "#FFFF66";
-  ctx.shadowBlur = 20;
-  ctx.fillText(`👤 ${toFullWidthBold(name)}`, W / 2, cy + r + 60);
 
-  // Info lines
-  const startY = cy + r + 100;
-  const pillH = 36, pillW = W - 60;
+  const nameGradient = ctx.createLinearGradient(cx - 150, cy + r + 50, cx + 150, cy + r + 50);
+  nameGradient.addColorStop(0, "#FFFF66");
+  nameGradient.addColorStop(0.5, "#ff00cc");
+  nameGradient.addColorStop(1, "#00ffff");
+
+  ctx.fillStyle = nameGradient;
+  ctx.shadowColor = "#FFFF66";
+  ctx.shadowBlur = 15;
+  ctx.fillText(`👤 ${toFullWidthBold(name)}`, cx, cy + r + 60);
+
+  // Info Lines with colorful design
+  const startY = cy + r + 90;
+  const pillH = 40, pillW = W - 60, pillRadius = 10;
+
   const items = [
-    ["🆔 UID", uid],
-    ["🌐 Username", username.startsWith("@") ? username : `@${username}`],
-    ["🚻 Gender", gender],
-    ["🎓 Type", type || "User"],
-    ["🎂 Birthday", birthday || "Private"],
-    ["💬 Nickname", nickname || name],
-    ["🌍 Location", location || "Private"],
-    ["💰 Money", `$${formatMoney(money)}`],
-    ["📈 XP Rank", `#${rank}`],
-    ["🏦 Money Rank", `#${moneyRank}`]
+    ["🆔 UID", uid, "#ff00cc"],
+    ["🌐 Username", username.startsWith("@") ? username : `@${username}`, "#00ffff"],
+    ["🚻 Gender", gender, "#ffcc00"],
+    ["🎓 Type", type || "User", "#00ff66"],
+    ["🎂 Birthday", birthday || "Private", "#ff66cc"],
+    ["💬 Nickname", nickname || name, "#66ffcc"],
+    ["🌍 Location", location || "Private", "#cc66ff"],
+    ["💰 Money", `$${formatMoney(money)}`, "#ff6666"],
+    ["📈 XP Rank", `#${rank}`, "#66ff66"],
+    ["🏦 Money Rank", `#${moneyRank}`, "#6666ff"],
+    ["👑 Dev Permission", isDev ? "✅ Available" : "❌ Not available", isDev ? "#00ff00" : "#ff0000"],
+    ["⭐ Premium User", isPremium ? "✅ Yes" : "❌ No", isPremium ? "#ffcc00" : "#ff0000"]
   ];
 
-  ctx.font = "18px Arial";
+  ctx.font = "bold 25px 'Arial', sans-serif";
   ctx.textAlign = "left";
   let y = startY;
+
   for (let i = 0; i < items.length; i++) {
-    const [label, val] = items[i];
+    const [label, val, color] = items[i];
     const x = 30;
 
-    ctx.fillStyle = "rgba(0,0,0,0.8)";
-    ctx.fillRect(x, y, pillW, pillH);
+    // Background with gradient
+    const pillGradient = ctx.createLinearGradient(x, y, x + pillW, y + pillH);
+    pillGradient.addColorStop(0, "rgba(0, 0, 0, 0.7)");
+    pillGradient.addColorStop(1, "rgba(0, 0, 0, 0.9)");
 
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "transparent";
-    ctx.fillText(`${label}: `, x + 10, y + pillH / 2 + 6);
-    const w = ctx.measureText(`${label}: `).width;
-
-    const color = i % 2 === 0 ? "#00ff00" : "#00ffff";
-    ctx.fillStyle = color;
+    ctx.fillStyle = pillGradient;
     ctx.shadowColor = color;
     ctx.shadowBlur = 10;
-    ctx.fillText(toFullWidthBold(val.toString()), x + 10 + w, y + pillH / 2 + 6);
-    y += pillH + 12;
+    drawRoundedRect(ctx, x, y, pillW, pillH, pillRadius);
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.fillText(`${label}:`, x + 15, y + pillH / 2 + 5);
+    const w = ctx.measureText(`${label}:`).width;
+
+    // Value with color and glow
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 5;
+    ctx.fillText(toFullWidthBold(val.toString()), x + 20 + w, y + pillH / 2 + 5);
+
+    y += pillH + 15;
   }
+
+  // Add decorative elements
+  ctx.save();
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = "#ffffff";
+  for (let i = 0; i < 20; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const size = Math.random() * 2 + 1;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 
   return canvas.toBuffer("image/png");
 }
 
+// Command Export
 module.exports = {
   config: {
     name: "spy",
-    version: "6.6",
+    version: "6.9",
     role: 0,
-    author: "Ew'r Saim",
+    author: "Ew'r Saim + Nil",
     category: "information",
-    description: "spy card with Facebook username/handle below UID",
+    description: "Spy card with dev & premium info - Vibrant Neon Edition",
     countDown: 5
   },
 
@@ -162,13 +284,11 @@ module.exports = {
         event.messageReply?.senderID ||
         event.senderID;
 
-      const wait = await message.reply("⚡ Generating your neon spy card...");
+      const wait = await message.reply("🎨 Generating your spy card...");
 
-      const [uInfo, uDB, avatarUrl, allUsers] = await Promise.all([
+      const [uInfo, uDB] = await Promise.all([
         api.getUserInfo(uid),
-        usersData.get(uid),
-        usersData.getAvatarUrl(uid),
-        usersData.getAll()
+        usersData.get(uid)
       ]);
 
       const info = uInfo[uid];
@@ -185,12 +305,24 @@ module.exports = {
 
       const location = info.location?.name || "Private";
 
+      // Get all users for ranking
+      const allUsers = await usersData.getAll();
+
       const rank =
         allUsers.sort((a, b) => b.exp - a.exp).findIndex(u => u.userID === uid) + 1;
       const moneyRank =
         allUsers.sort((a, b) => b.money - a.money).findIndex(u => u.userID === uid) + 1;
 
       const username = info.vanity || `facebook.com/${uid}`;
+
+      // Get avatar URL safely
+      let avatarUrl;
+      try {
+        avatarUrl = await usersData.getAvatarUrl(uid);
+      } catch (error) {
+        console.error("Error getting avatar URL:", error);
+        avatarUrl = "https://i.imgur.com/I3VsBEt.png";
+      }
 
       const buffer = await createSpyCard({
         avatarUrl,
@@ -202,21 +334,28 @@ module.exports = {
         birthday: info.isBirthday !== false ? info.isBirthday : "Private",
         nickname,
         location,
-        money: uDB.money,
+        money: uDB.money || 0,
         rank,
-        moneyRank
+        moneyRank,
+        isDev: uDB.data?.dev === true,
+        isPremium: uDB.data?.premium === true
       });
 
+      // Save File
       const dir = path.join(__dirname, "cache");
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-      const file = path.join(dir, `spy_card_${uid}.png`);
-      fs.writeFileSync(file, buffer);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+      const filePath = path.join(dir, `spy_card_${uid}.png`);
+      fs.writeFileSync(filePath, buffer);
 
       await message.unsend(wait.messageID);
-      return message.reply({ attachment: fs.createReadStream(file) });
+      return message.reply({
+        body: "✨ Here's your spy card!",
+        attachment: fs.createReadStream(filePath)
+      });
     } catch (err) {
-      console.error(err);
-      return message.reply("❌ Failed to generate neon spy card.");
+      console.error("Spy card error:", err);
+      return message.reply("❌ Failed to generate neon spy card. Please try again later.");
     }
   }
 };

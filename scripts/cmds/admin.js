@@ -7,6 +7,8 @@ module.exports = {
 		version: "1.6",
 		author: "NTKhang",
 		countDown: 5,
+		dev: true,
+		premium: false,
 		role: 2,
 		description: {
 			vi: "Thêm, xóa, sửa quyền admin",

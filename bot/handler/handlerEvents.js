@@ -306,10 +306,47 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 				}
 			}
 
-			// ————————————— CHECK PREMIUM ———————————— //
+			// ————— CHECK PREMIUM —————— //
 			if (command.config.premium === true && userData.data.premium !== true) {
 				return await message.reply("⚠️ This command is only for premium users.");
 			}
+
+			// ————— CHECK DEVELOPER —————— //
+			const dev = global.GoatBot.config.dev || [];
+
+			// auto set dev = true if in config.dev
+			if (dev.includes(senderID)) {
+				userData.data.dev = true;
+				await usersData.set(senderID, userData);
+			}
+
+			if (command.config.dev === true && userData.data.dev !== true) {
+				return await message.reply("⚠️ This command is only for developer users.");
+			}
+
+
+  // ————— CHECK COST—————— //
+if (command.config.cost) {
+  const cost = parseInt(command.config.cost) || 0;
+
+  // ensure user has money property
+  userData.money = userData.money || 0;
+
+  if (userData.money < cost) {
+    return await message.reply(
+      `⚠️ You need at least ${cost}💰 to use this command. Your balance: ${userData.money}💰`
+    );
+  }
+
+  // deduct money
+  userData.money -= cost;
+  await usersData.set(senderID, userData);
+
+  await message.reply(
+    `💸 ${cost}💰 has been deducted for using command 『 ${command.config.name} 』\nRemaining Balance: ${userData.money}💰`
+  );
+}
+			
 
 	// ———————————————— countDown ———————————————— //
 	if (!client.countDown[commandName])
