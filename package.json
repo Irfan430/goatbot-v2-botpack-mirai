@@ -7,6 +7,7 @@
 		"node": "18.x",
 		"npm": ">=7.0.0"
 	},
+	"author": "xnil6x",
 	"dependencies": {
 		"@distube/ytdl-core": "^4.13.3",
 		"axios": "^1.4.0",
@@ -43,6 +44,7 @@
 		"ora": "^5.4.1",
 		"passport": "^0.6.0",
 		"passport-local": "^1.0.0",
+		"pastebin-api": "^7.0.0",
 		"pastebin-js": "^1.0.6",
 		"path": "^0.12.7",
 		"qrcode-reader": "^1.0.4",

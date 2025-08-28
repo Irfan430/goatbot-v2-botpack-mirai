@@ -1,114 +1,136 @@
 const axios = require("axios");
-const url = `https://rasin-x-apis-main.onrender.com/api/rasin`;
+const mongoose = require("mongoose");
 
-module.exports = {
-  config: {
-    name: "teach",
-    aliases: ['nt'],
-    version: "1.4",
-    author: "Rasin",
-    prefix: false,
-    role: 0,
-    category: "teach simsimi",
-    guide: {
-      en: "{pn}"
-    }
-  },
+mongoose.connect('m', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }).then(() => console.log('MongoDB Connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+const ReplyModel = mongoose.models.Reply || mongoose.model('Reply', new mongoose.Schema({
+  senderID: String,
+  text: String,
+  time: { type: Date, default: Date.now }
+}));
+
+const badWords = ["magi", "voda", "fuck", "dick", "hot", "dhon", "suck", " vuda", "heda", "bby", "🙂"];
+
+function containsBadWord(text) {
+  return badWords.some(word => text.toLowerCase().includes(word));
+}
+
+function formatMoney(num) {
+  const units = ["", "k", "𝐌", "𝐁", "𝐓", "𝐐", "𝐐𝐢", "𝐒𝐱", "𝐒𝐩", "𝐎𝐜", "𝐍", "𝐃"];
+  let unit = 0;
+  while (num >= 1000 && unit < units.length - 1) {
+    num /= 1000;
+    unit++;
+  }
+  return Number(num.toFixed(1)) + units[unit];
+}
+
+const getBaseApiUrl = async () => {
+  try {
+    const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/exe/main/baseApiUrl.json");
+    return base.data?.mahmud + "/api/jan";
+  } catch (err) {
+    console.error("Failed to fetch base API URL:", err.message);
+    return null;
+  }
+};
+
+module.exports.config = {
+  name: "jant",
+  aliases: ["jt", "nt"],
+  version: "1.7",
+  author: "MahMUD",
+  countDown: 0,
+  role: 0,
+  category: "ai",
+  guide: {
+    en: "{pn} - send a random question\nReply to the bot's message to auto teach\nReply 'uns' to skip and get next"
+  }
+};
+
+async function sendRandomQuestion(message, senderID) {
+  try {
+    const replies = await ReplyModel.find();
+    if (!replies || replies.length === 0)
+      return message.reply("❌ response not found ।");
+    
+    const cleanReplies = replies.filter(r => !containsBadWord(r.text));
+    if (cleanReplies.length === 0)
+      return message.reply("❌ | No clean question available. Try again later.");
+    
+    const randomReply = cleanReplies[Math.floor(Math.random() * cleanReplies.length)];
+    const msg = await message.reply(`${randomReply.text}\n\n• 𝐑𝐞𝐩𝐥𝐲 𝐲𝐨𝐮𝐫 𝐭𝐞𝐚𝐜𝐡 𝐚𝐧𝐬𝐰𝐞𝐫\n• 𝐓𝐲𝐩𝐞 'uns' 𝐭𝐨 𝐬𝐤𝐢𝐩`);
+    
+    global.GoatBot.onReply.set(msg.messageID, {
+      commandName: "jant",
+      trigger: randomReply.text,
+      author: senderID,
+      id: randomReply._id
+    });
+    
+  } catch (err) {
+    console.error("Error in sendRandomQuestion:", err);
+    return message.reply("❌ error try Again।");
+  }
+}
+
+module.exports.onStart = async ({ message, event }) => {
+  await sendRandomQuestion(message, event.senderID);
+};
+
+module.exports.onReply = async ({ event, message, Reply: replyData, usersData }) => {
+  if (event.senderID !== replyData.author) return;
   
-  onStart: async function({ message, event, api }) {
-    await this.rasin(event.senderID, message, event);
-  },
+  const input = event.body.trim().toLowerCase();
   
-  onReply: async function({ message, event, Reply, api, usersData }) {
-    if (event.senderID !== Reply.author) {
-      return message.reply("⚠️ This question is not for you!");
-    }
-
-    if (Reply.type === "answerQ") {
-      const userReply = event.body?.trim();
-      if (!userReply) return message.reply("Please provide a valid answer!");
-      
-      try {
-        const uid = Reply.uid;
-        const response = await axios.get(
-          `http://46.247.108.38:6148/teach?ask=${encodeURIComponent(Reply.qns)}&ans=${encodeURIComponent(userReply)}&uid=${encodeURIComponent(uid)}`
-        );
-        
-        if (response.data.success === "true") {
-          const userName = await this.getUserName(event.senderID, api);
-
-          // ✅ টাকা আর এক্সপি সেট করা
-          const userData = await usersData.get(event.senderID) || {};
-          const currentMoney = userData.money || 0;
-          const currentExp = userData.exp || 0;
-
-          const newMoney = currentMoney + 10000;
-          const newExp = currentExp + 400;
-
-          await usersData.set(event.senderID, {
-            money: newMoney,
-            exp: newExp
-          });
-
-          message.reply({
-            body: `✅ Successfully 🎉\n\n` +
-                  `📌 Question: ${Reply.qns}\n` +
-                  `💬 Reply: ${userReply}\n\n` +
-                  `👨‍🏫 Teacher: ${userName}\n\n` +
-                  `💰 Reward: +10000 Money (Total: ${newMoney})\n` +
-                  `⭐ Exp: +400 (Total: ${newExp})`
-          });
-          
-          this.rasin(event.senderID, message, event);
-          
-        } else {
-          message.reply(`Failed to save: ${response.data.message || "Unknown error"}`);
-        }
-      } catch (error) {
-        console.error("Error saving teach:", error);
-        if (error.response && error.response.status === 403) {
-          message.reply("🚫 Content not allowed! Keep it clean 🙂🙏🏻");
-        } else if (error.response) {
-          message.reply(`Error: ${error.response.data?.message || error.response.statusText}`);
-        } else {
-          message.reply("Error saving your answer. Try again later.");
-        }
-      }
-    }
-  },
-  
-  rasin: async function(userID, message, event) {
+  if (input === "uns") {
     try {
-      const uid = event.senderID;
-      const res = await axios.get(`${url}/nusu`);
-      const qns = res.data.question;
       
-      message.reply({
-        body: `Your Question:\n\nQuestion: ${qns}\n\n🎀 Reply this message with your answer.`
-      }, (err, info) => {
-        if (!err) {
-          global.GoatBot.onReply.set(info.messageID, {
-            commandName: this.config.name,
-            type: "answerQ",
-            author: userID,
-            uid: uid,
-            qns: qns,
-            messageID: info.messageID
-          });
-        }
-      });
+      await ReplyModel.findByIdAndDelete(replyData.id);
+      await message.reply("✅ | Teach skip successfully,  sending another teach");
+      await sendRandomQuestion(message, event.senderID);
     } catch (err) {
-      console.error("Error fetching question:", err);
-      message.reply("❌ Error fetching random question. Please try again later.");
+      console.error("Error skipping question:", err);
+      await message.reply("❌ Couldn't skip the question. Try again.");
     }
-  },
+    return;
+  }
   
-  getUserName: async function(userID, api) {
-    try {
-      const userInfo = await api.getUserInfo(userID);
-      return userInfo[userID]?.name || "Shakib Khan er mama";
-    } catch {
-      return "Hero Alom er kaka";
-    }
+  const apiUrl = await getBaseApiUrl();
+  if (!apiUrl) {
+    return message.reply("try Again");
+  }
+  
+  try {
+    const res = await axios.get(
+          `http://46.247.108.38:6148/teach?ask=${encodeURIComponent(replyData.trigger)}&ans=${encodeURIComponent(event.body)}&uid=${encodeURIComponent(event.senderID)}`
+        );
+    const userName = await usersData.getName(event.senderID) || "Unknown User";
+    const rewardCoin = 10000;
+    
+    const userData = await usersData.get(event.senderID) || { money: 0 };
+    userData.money += rewardCoin;
+    await usersData.set(event.senderID, userData);
+    
+    await message.reply(
+      `✅ Replies added: "${event.body}" to "${replyData.trigger}"\n` +
+      `• 𝐓𝐞𝐚𝐜𝐡𝐞𝐫: ${userName}\n` +
+      `• 𝐓𝐨𝐭𝐚𝐥: ${res.data?.count || 0}\n` +
+      `• 𝐘𝐨𝐮 𝐰𝐢𝐧 ${formatMoney(rewardCoin)} balance`
+    );
+    
+    await ReplyModel.findByIdAndDelete(replyData.id);
+    
+    await sendRandomQuestion(message, event.senderID);
+    
+  } catch (err) {
+    console.error("Error during reply save:", err);
+    const errMsg = err.response?.data || err.message || "❌ Unknown error occurred.";
+    await message.reply(errMsg);
+    await sendRandomQuestion(message, event.senderID);
   }
 };
