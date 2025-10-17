@@ -26,25 +26,25 @@
     "dhbc": {
       "reward": 1000
     },
-    "antiout": {
-      "deltaNext": 5
-    },
-    "info": {},
     "ad": {
-      "deltaNext": 5
-    },
-    "hitler": {
-      "deltaNext": 5
-    },
-    "dcblack": {
-      "deltaNext": 5
-    },
-    "bobross": {
       "deltaNext": 5
     },
     "affect": {
       "deltaNext": 5
     },
+    "antiout": {
+      "deltaNext": 5
+    },
+    "bobross": {
+      "deltaNext": 5
+    },
+    "dcblack": {
+      "deltaNext": 5
+    },
+    "hitler": {
+      "deltaNext": 5
+    },
+    "info": {},
     "wanted": {
       "deltaNext": 5
     }

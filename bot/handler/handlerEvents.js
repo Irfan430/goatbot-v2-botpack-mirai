@@ -212,84 +212,53 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 		*/
 		let isUserCallCommand = false;
 		async function onStart() {
-	// —————————————— CHECK USE BOT —————————————— //
-	if (!body)
-		return;
-
-	const dateNow = Date.now();
-	let args, commandName, command;
-
-	// First check for prefixed commands
-	if (body.startsWith(prefix)) {
-		args = body.slice(prefix.length).trim().split(/ +/);
-		commandName = args.shift().toLowerCase();
-		command = GoatBot.commands.get(commandName) || GoatBot.commands.get(GoatBot.aliases.get(commandName));
-
-		// If command is found and usePrefix is false, send a message indicating prefix is not needed
-		if (command && command.config.usePrefix === false) {
-	return await message.reply(`✨ The command "『 ${commandName} 』" does not require a prefix ✨`);
-		}
-	} 
-	// Then check for non-prefixed commands
-	else {
-		args = body.trim().split(/ +/);
-		commandName = args.shift().toLowerCase();
-		// Only get commands that explicitly allow no prefix
-		command = Array.from(GoatBot.commands.values()).find(cmd => 
-			(cmd.config.name === commandName || 
-			 (cmd.config.aliases || []).includes(commandName)) &&
-			cmd.config.usePrefix === false
-		);
-	}
-
-	// ———————— CHECK ALIASES SET BY GROUP ———————— //
-	if (!command) {
-		const aliasesData = threadData.data.aliases || {};
-		for (const cmdName in aliasesData) {
-			if (aliasesData[cmdName].includes(commandName)) {
-				command = GoatBot.commands.get(cmdName);
-				break;
+			// —————————————— CHECK USE BOT —————————————— //
+			if (!body || !body.startsWith(prefix))
+				return;
+			const dateNow = Date.now();
+			const args = body.slice(prefix.length).trim().split(/ +/);
+			// ————————————  CHECK HAS COMMAND ——————————— //
+			let commandName = args.shift().toLowerCase();
+			let command = GoatBot.commands.get(commandName) || GoatBot.commands.get(GoatBot.aliases.get(commandName));
+			// ———————— CHECK ALIASES SET BY GROUP ———————— //
+			const aliasesData = threadData.data.aliases || {};
+			for (const cmdName in aliasesData) {
+				if (aliasesData[cmdName].includes(commandName)) {
+					command = GoatBot.commands.get(cmdName);
+					break;
+				}
 			}
-		}
-	}
+			// ————————————— SET COMMAND NAME ————————————— //
+			if (command)
+				commandName = command.config.name;
+			// ——————— FUNCTION REMOVE COMMAND NAME ———————— //
+			function removeCommandNameFromBody(body_, prefix_, commandName_) {
+				if (arguments.length) {
+					if (typeof body_ != "string")
+						throw new Error(`The first argument (body) must be a string, but got "${getType(body_)}"`);
+					if (typeof prefix_ != "string")
+						throw new Error(`The second argument (prefix) must be a string, but got "${getType(prefix_)}"`);
+					if (typeof commandName_ != "string")
+						throw new Error(`The third argument (commandName) must be a string, but got "${getType(commandName_)}"`);
 
-	// ————————————— SET COMMAND NAME ————————————— //
-	if (command)
-		commandName = command.config.name;
-
-	// ——————— FUNCTION REMOVE COMMAND NAME ———————— //
-	function removeCommandNameFromBody(body_, prefix_, commandName_) {
-		if ([body_, prefix_, commandName_].every(x => nullAndUndefined.includes(x)))
-			throw new Error("Please provide body, prefix and commandName to use this function");
-
-		for (let i = 0; i < arguments.length; i++)
-			if (typeof arguments[i] != "string")
-				throw new Error(`The parameter "${i + 1}" must be a string, but got "${getType(arguments[i])}"`);
-
-		return body_.replace(new RegExp(`^${prefix_}(\\s+|)${commandName_}`, "i"), "").trim();
-	}
-
-	// ————— CHECK BANNED OR ONLY ADMIN BOX ————— //
-	if (isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, commandName, message, langCode))
-		return;
-
-	// Only reply if the command was prefixed and not found
-	if (!command && body.startsWith(prefix)) {
-		if (!hideNotiMessage.commandNotFound) {
-			return await message.reply(
-				commandName ?
-					utils.getText({ lang: langCode, head: "handlerEvents" }, "commandNotFound", commandName, prefix) :
-					utils.getText({ lang: langCode, head: "handlerEvents" }, "commandNotFound2", prefix)
-			);
-		}
-		return true;
-	}
-
-	// If the message does not start with a prefix and the command is not found, do nothing
-	if (!command && !body.startsWith(prefix)) {
-		return;
-	}
-
+					return body_.replace(new RegExp(`^${prefix_}(\\s+|)${commandName_}`, "i"), "").trim();
+				}
+				else {
+					return body.replace(new RegExp(`^${prefix}(\\s+|)${commandName}`, "i"), "").trim();
+				}
+			}
+			// —————  CHECK BANNED OR ONLY ADMIN BOX  ————— //
+			if (isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, commandName, message, langCode))
+				return;
+			if (!command)
+				if (!hideNotiMessage.commandNotFound)
+					return await message.reply(
+						commandName ?
+							utils.getText({ lang: langCode, head: "handlerEvents" }, "commandNotFound", commandName, prefix) :
+							utils.getText({ lang: langCode, head: "handlerEvents" }, "commandNotFound2", prefix)
+					);
+				else
+					return true;
 			// ————————————— CHECK PERMISSION ———————————— //
 			const roleConfig = getRoleConfig(utils, command, isGroup, threadData, commandName);
 			const needRole = roleConfig.onStart;
@@ -305,116 +274,50 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 					return true;
 				}
 			}
-
-			// ————— CHECK PREMIUM —————— //
-			if (command.config.premium === true && userData.data.premium !== true) {
-				return await message.reply("⚠️ This command is only for premium users.");
+			// ———————————————— countDown ———————————————— //
+			if (!client.countDown[commandName])
+				client.countDown[commandName] = {};
+			const timestamps = client.countDown[commandName];
+			let getCoolDown = command.config.countDown;
+			if (!getCoolDown && getCoolDown != 0 || isNaN(getCoolDown))
+				getCoolDown = 1;
+			const cooldownCommand = getCoolDown * 1000;
+			if (timestamps[senderID]) {
+				const expirationTime = timestamps[senderID] + cooldownCommand;
+				if (dateNow < expirationTime)
+					return await message.reply(utils.getText({ lang: langCode, head: "handlerEvents" }, "waitingForCommand", ((expirationTime - dateNow) / 1000).toString().slice(0, 3)));
 			}
+			// ——————————————— RUN COMMAND ——————————————— //
+			const time = getTime("DD/MM/YYYY HH:mm:ss");
+			isUserCallCommand = true;
+			try {
+				// analytics command call
+				(async () => {
+					const analytics = await globalData.get("analytics", "data", {});
+					if (!analytics[commandName])
+						analytics[commandName] = 0;
+					analytics[commandName]++;
+					await globalData.set("analytics", analytics, "data");
+				})();
 
-			// ————— CHECK DEVELOPER —————— //
-			const dev = global.GoatBot.config.dev || [];
-
-			// auto set dev = true if in config.dev
-			if (dev.includes(senderID)) {
-				userData.data.dev = true;
-				await usersData.set(senderID, userData);
+				createMessageSyntaxError(commandName);
+				const getText2 = createGetText2(langCode, `${process.cwd()}/languages/cmds/${langCode}.js`, prefix, command);
+				await command.onStart({
+					...parameters,
+					args,
+					commandName,
+					getLang: getText2,
+					removeCommandNameFromBody
+				});
+				timestamps[senderID] = dateNow;
+				log.info("CALL COMMAND", `${commandName} | ${userData.name} | ${senderID} | ${threadID} | ${args.join(" ")}`);
 			}
-
-			if (command.config.dev === true && userData.data.dev !== true) {
-				return await message.reply("⚠️ This command is only for developer users.");
+			catch (err) {
+				log.err("CALL COMMAND", `An error occurred when calling the command ${commandName}`, err);
+				return await message.reply(utils.getText({ lang: langCode, head: "handlerEvents" }, "errorOccurred", time, commandName, removeHomeDir(err.stack ? err.stack.split("\n").slice(0, 5).join("\n") : JSON.stringify(err, null, 2))));
 			}
-
-
-  // ————— CHECK COST—————— //
-if (command.config.cost) {
-  const cost = parseInt(command.config.cost) || 0;
-
-  // ensure user has money property
-  userData.money = userData.money || 0;
-
-  if (userData.money < cost) {
-    return await message.reply(
-      `⚠️ You need at least ${cost}💰 to use this command. Your balance: ${userData.money}💰`
-    );
-  }
-
-  // deduct money
-  userData.money -= cost;
-  await usersData.set(senderID, userData);
-
-  await message.reply(
-    `💸 ${cost}💰 has been deducted for using command 『 ${command.config.name} 』\nRemaining Balance: ${userData.money}💰`
-  );
-}
-			
-
-	// ———————————————— countDown ———————————————— //
-	if (!client.countDown[commandName])
-		client.countDown[commandName] = {};
-
-	const timestamps = client.countDown[commandName];
-	let getCoolDown = command.config.countDown;
-	if ((!getCoolDown && getCoolDown != 0) || isNaN(getCoolDown))
-		getCoolDown = 1;
-
-	const cooldownCommand = getCoolDown * 1000;
-	if (timestamps[senderID]) {
-		const expirationTime = timestamps[senderID] + cooldownCommand;
-		if (dateNow < expirationTime) {
-			return await message.reply(
-				utils.getText(
-					{ lang: langCode, head: "handlerEvents" }, 
-					"waitingForCommand", 
-					((expirationTime - dateNow) / 1000).toString().slice(0, 3)
-				)
-			);
 		}
-	}
 
-	// ——————————————— RUN COMMAND ——————————————— //
-	const time = getTime("DD/MM/YYYY HH:mm:ss");
-	isUserCallCommand = true;
-
-	try {
-		// analytics command call
-		(async () => {
-			const analytics = await globalData.get("analytics", "data", {});
-			if (!analytics[commandName])
-				analytics[commandName] = 0;
-			analytics[commandName]++;
-			await globalData.set("analytics", analytics, "data");
-		})();
-
-		createMessageSyntaxError(commandName);
-		const getText2 = createGetText2(langCode, `${process.cwd()}/languages/cmds/${langCode}.js`, prefix, command);
-
-		await command.onStart({
-			...parameters,
-			args,
-			commandName,
-			getLang: getText2,
-			removeCommandNameFromBody
-		});
-
-		timestamps[senderID] = dateNow;
-		log.info(
-			"CALL COMMAND", 
-			`${commandName} | ${userData.name} | ${senderID} | ${threadID} | ${args.join(" ")}`
-		);
-	}
-	catch (err) {
-		log.err("CALL COMMAND", `An error occurred when calling the command ${commandName}`, err);
-		return await message.reply(
-			utils.getText(
-				{ lang: langCode, head: "handlerEvents" }, 
-				"errorOccurred", 
-				time, 
-				commandName, 
-				removeHomeDir(err.stack ? err.stack.split("\n").slice(0, 5).join("\n") : JSON.stringify(err, null, 2))
-			)
-		);
-	}
-}
 
 		/*
 		 +------------------------------------------------+

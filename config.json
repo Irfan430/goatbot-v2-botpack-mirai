@@ -12,61 +12,51 @@
   "antiInbox": false,
   "language": "en",
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "🦋✨ 𝐘𝐨𝐮𝐫 𝐏𝐨𝐨𝐤𝐢𝐞𝐞 🎀🦋",
-  "prefix": "!",
   "adminOnly": {
     "enable": false,
     "ignoreCommand": []
   },
+  "nickNameBot": "🍼🧸 𝐘𝐨𝐮𝐫 𝐏𝐨𝐨𝐤𝐢𝐞𝐞 🧸🍼",
+  "prefix": "/",
   "adminBot": [
-    "100001986888287",
-    "61556006709662",
+    "100064881501802",
     "100000180724818",
-    "100051067476600",
-    "61574767724060",
-    "61579487393228"
+    "100078794143432"
   ],
-  "owner": [
-    "100001986888287"
-  ],
-  "dev": [
-    "100001986888287"
+  "developers": [
+    "100064881501802",
+    "100001986888287",
+    "100000180724818"
   ],
   "premium": [
-    "100001986888287"
+    "100064881501802",
+    "100001986888287",
+    "100000180724818"
   ],
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [],
-    "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
-  },
-  "whiteListModeThread": {
-    "enable": true,
-    "whiteListThreadIds": [
-      "23939069145774297"
-    ],
-    "notes": "if you enable this feature, only the thread in the whiteListThreadIds list can use the bot",
-    "how_it_work": "if you enable both whiteListMode and whiteListModeThread, the system will check if the user is in whiteListIds, then check if the thread is in whiteListThreadIds, if one of the conditions is true, the user can use the bot"
+    "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
   },
   "database": {
-    "type": "sqlite",
-    "uriMongodb": "",
+    "type": "mongodb",
+    "uriMongodb": "mongodb+srv://xnil6x:xnil6x143@xnilbot.0qjmw.mongodb.net/?retryWrites=true&w=majority&appName=xnilbot",
     "autoSyncWhenStart": false,
     "autoRefreshThreadInfoFirstTime": true,
     "notes": "(1) type selects 'json' or 'sqlite' or 'mongodb'. If you choose mongodb, enter uri connect mongodb in the uriMongodb section, instructions to get uri connect mongodb at: https://youtu.be/z1f9urHW5xY. I recommend using 'mongodb' or 'sqlite', json is not recommended because it is not stable. (2) when you set autoSyncWhenStart to true, the bot will automatically synchronize the data in the database when starting the bot, this will make the bot start slower. (3) when you set autoRefreshThreadInfoFirstTime to true, the bot will automatically refresh the thread information when get first message from the thread since starting the bot"
   },
-  "timeZone": "Europe/Paris",
+  "timeZone": "Asia/Dhaka",
   "credentials": {
     "gmailAccount": {
-      "email": "sahulrimin@gmail.com",
-      "clientId": "24605262819-7no89dr93lchm0nsnffte6k1girvf254.apps.googleusercontent.com",
-      "clientSecret": "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",
-      "refreshToken": "1//04jo0gL7IHPjJCgYIARAAGAQSNwF-L9IrkbtrhwYvh7OIPCnnbjaX0MGtDJre7DP8-A35eNn1LthF4-VEVT47RPXY9llD0GpQpvU",
+      "email": "romeobot555@gmail.com",
+      "clientId": "938512788954-ndaggmsbqkf0a6ougkc7p0iek446ikt1.apps.googleusercontent.com",
+      "clientSecret": "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",
+      "refreshToken": "1//046ZXiqfQpbF1CgYIARAAGAQSNwF-L9Ir8uPenmtD9Co8psKc7goPgaxSfYG_TJreIbnB1mKgwC0vKP9t4Ir-kxjf-YMNGd124TQ",
       "apiKey": ""
     },
     "gRecaptcha": {
-      "siteKey": "6LflC2IpAAAAAH0OS-zr79ovyoV3VQPDhwKbrN3H",
-      "secretKey": "6LflC2IpAAAAAM4JOsRl4ZdKZ0ihowTLDfvBe_W4"
+      "siteKey": "6LfH6HQrAAAAACmNc3LTiJFLiUvMpFblCUqj6pd1",
+      "secretKey": "6LfH6HQrAAAAAEhnFm96bt-CeDuXcAGDFKeWPVEq"
     }
   },
   "dashBoard": {
@@ -84,7 +74,7 @@
     }
   },
   "autoRestart": {
-    "time": 18000000,
+    "time": null,
     "notes": "you can set time is interval with milisecond or cron time, example: 1000, 10000, 60000, 3600000, 86400000, 0 0 * * *,... docs: https://www.npmjs.com/package/node-cron. If you set time is 0 or false or null, the bot will not auto restart"
   },
   "autoUptime": {
@@ -94,14 +84,14 @@
     "notes": "the value of timeInterval is seconds, url is the url you want to send the request to (automatically detected for hosting glitch or replit)"
   },
   "autoLoadScripts": {
-    "enable": true,
+    "enable": false,
     "ignoreCmds": "",
     "ignoreEvents": "",
     "notes": "this feature will automatically load the script when scripts have been changed, you can set ignoreCmds to ignore commands, ignoreEvents to ignore events, separate by comma or space, example: \"cmd1.js cmd2.js cmd3.js\" (without backslash)"
   },
   "autoRefreshFbstate": true,
-  "autoReloginWhenChangeAccount": true,
-  "autoRestartWhenListenMqttError": true,
+  "autoReloginWhenChangeAccount": false,
+  "autoRestartWhenListenMqttError": false,
   "restartListenMqtt": {
     "enable": true,
     "timeRestart": 3600000,

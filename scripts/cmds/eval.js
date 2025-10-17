@@ -5,10 +5,10 @@ module.exports = {
 		name: "eval",
 		version: "1.6",
 		author: "NTKhang",
-		countDown: 5,
 		usePrefix: false,
+		countDown: 5,
 		role: 2,
-		premium: false,
+		usePrefix: false,
 		description: {
 			vi: "Test code nhanh",
 			en: "Test code quickly"

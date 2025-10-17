@@ -6,7 +6,7 @@ module.exports = {
     config: {
         name: "kiss",
         aliases: ["kiss"],
-        version: "1.3",
+        version: "1.2",
         author: "xnil",
         countDown: 5,
         role: 0,
@@ -29,39 +29,30 @@ module.exports = {
         }
 
         if (!two) {
-            return message.reply("⚠️ Please mention someone, reply to their message, or give a UID!");
+            return message.reply("Please mention someone, reply to their message, or give a UID!");
         }
 
         const tmpDir = path.join(__dirname, "tmp");
         fs.ensureDirSync(tmpDir);
 
         try {
-            // Get avatars
-            const avatarURL1 = await usersData.getAvatarUrl(one) || `https://graph.facebook.com/${one}/picture?width=512&height=512`;
-            const avatarURL2 = await usersData.getAvatarUrl(two) || `https://graph.facebook.com/${two}/picture?width=512&height=512`;
+            const avatarURL1 = await usersData.getAvatarUrl(one) || "https://i.imgur.com/placeholder1.png";
+            const avatarURL2 = await usersData.getAvatarUrl(two) || "https://i.imgur.com/placeholder2.png";
 
-            // Create image
             const img = await new DIG.Kiss().getImage(avatarURL1, avatarURL2);
             const pathSave = path.join(tmpDir, `${one}_${two}_kiss.png`);
             fs.writeFileSync(pathSave, img);
 
-            // Get names with fallback
-            let nameOne = await usersData.getName(one);
-            let nameTwo = await usersData.getName(two);
-
-            if (!nameOne || nameOne === "null") {
-                const info = await api.getUserInfo(one);
-                nameOne = info[one]?.name || "Unknown User";
-            }
-            if (!nameTwo || nameTwo === "null") {
-                const info = await api.getUserInfo(two);
-                nameTwo = info[two]?.name || "Unknown User";
-            }
-
-            const content = `😘 ${nameOne} kissed ${nameTwo}`;
+            const nameOne = await usersData.getName(one);
+            const nameTwo = await usersData.getName(two);
+            const content = `😘 ${nameOne} (UID: ${one}) kissed ${nameTwo} (UID: ${two})`;
 
             message.reply({
                 body: content,
+                mentions: [
+                    { id: one, tag: nameOne },
+                    { id: two, tag: nameTwo }
+                ],
                 attachment: fs.createReadStream(pathSave)
             }, () => fs.unlinkSync(pathSave));
 

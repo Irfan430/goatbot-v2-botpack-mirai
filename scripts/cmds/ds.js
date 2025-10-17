@@ -34,7 +34,7 @@ module.exports = {
     setTimeout(() => api.editMessage("📡 Connecting to DeepSeek AI...", reply.messageID), 2000);
 
     try {
-      const url = `${await baseApiUrl()}/api/ai/deepseek/v4?prompt=${encodeURIComponent(prompt)}`;
+      const url = `${await baseApiUrl()}/api/ai/deepseek/v3?prompt=${encodeURIComponent(prompt)}`;
       const res = await axios.get(url);
 
       const result = res.data?.result?.trim();

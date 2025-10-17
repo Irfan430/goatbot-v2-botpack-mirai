@@ -1,250 +1,93 @@
-const fs = require("fs-extra");
-const axios = require("axios");
-const path = require("path");
-const { getPrefix } = global.utils;
-const { commands, aliases } = global.GoatBot;
-
-const fancyFontMap = {
-  'A': '𝙰', 'B': '𝙱', 'C': '𝙲', 'D': '𝙳', 'E': '𝙴', 'F': '𝙵', 'G': '𝙶', 'H': '𝙷', 'I': '𝙸', 'J': '𝙹', 'K': '𝙺', 'L': '𝙻', 'M': '𝙼', 'N': '𝙽', 'O': '𝙾', 'P': '𝙿', 'Q': '𝚀', 'R': '𝚁', 'S': '𝚂', 'T': '𝚃', 'U': '𝚄', 'V': '𝚅', 'W': '𝚆', 'X': '𝚇', 'Y': '𝚈', 'Z': '𝚉',
-  'a': '𝚊', 'b': '𝚋', 'c': '𝚌', 'd': '𝚍', 'e': '𝚎', 'f': '𝚏', 'g': '𝚐', 'h': '𝚑', 'i': '𝚒', 'j': '𝚓', 'k': '𝚔', 'l': '𝚕', 'm': '𝚖', 'n': '𝚗', 'o': '𝚘', 'p': '𝚙', 'q': '𝚚', 'r': '𝚛', 's': '𝚜', 't': '𝚝', 'u': '𝚞', 'v': '𝚟', 'w': '𝚠', 'x': '𝚡', 'y': '𝚢', 'z': '𝚣',
-  '0': '𝟶', '1': '𝟷', '2': '𝟸', '3': '𝟹', '4': '𝟺', '5': '𝟻', '6': '𝟼', '7': '𝟽', '8': '𝟾', '9': '𝟿',
-  ' ': ' ', ',': ',', '.': '.', '!': '!', '?': '?', '-': '-', '': '', '(': '(', ')': ')', '[': '[', ']': ']', '{': '{', '}': '}',
-  '\n': '\n'
+const boldText = (text) => {
+  const boldMap = {
+    'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚',
+    'H': '𝗛', 'I': '𝗜', 'J': '𝗝', 'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡',
+    'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧', 'U': '𝗨',
+    'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭',
+    'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 'f': '𝗳', 'g': '𝗴',
+    'h': '𝗵', 'i': '𝗶', 'j': '𝗷', 'k': '𝗸', 'l': '𝗹', 'm': '𝗺', 'n': '𝗻',
+    'o': '𝗼', 'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁', 'u': '𝘂',
+    'v': '𝘃', 'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇',
+    '0': '𝟬', '1': '𝟭', '2': '𝟮', '3': '𝟯', '4': '𝟰', '5': '𝟱', '6': '𝟲',
+    '7': '𝟳', '8': '𝟴', '9': '𝟵'
+  };
+  return text.split('').map(c => boldMap[c] || c).join('');
 };
-
-function toFancyFont(text) {
-  return text.split('').map(char => fancyFontMap[char] || char).join('');
-}
 
 module.exports = {
   config: {
     name: "help",
-    version: "2.1",
-    author: "Hopeless Nil",
-    countDown: 5,
+    aliases: ["menu", "h"],
+    version: "4.5",
+    author: "xnil6x",
+    usePrefix: true,
     role: 0,
-    shortDescription: {
-      en: "Elegant help menu with detailed command info",
-    },
-    longDescription: {
-      en: "View the list of all available commands and get detailed usage info for a specific command.",
-    },
-    category: "info",
+    description: "Display all available commands",
+    category: "system",
     guide: {
-      en: "{pn} [command name] or {pn} c <category_name>",
-    },
-    priority: 1,
-  },
-
-  onStart: async function ({ message, args, event, threadsData, role }) {
-    const { threadID } = event;
-    const threadData = await threadsData.get(threadID);
-    const prefix = getPrefix(threadID);
-
-    // Handle category view
-    if (args[0] && (args[0].toLowerCase() === 'c' || args[0].toLowerCase() === 'category') && args[1]) {
-      const categoryName = args.slice(1).join(' ').toLowerCase();
-      const categories = {};
-
-      // Get all commands accessible to user's role
-      for (const [name, value] of commands) {
-        if (value.config.role > 1 && role < value.config.role) continue;
-        const category = value.config.category?.en || value.config.category || "Uncategorized";
-        categories[category] = categories[category] || { commands: [] };
-        categories[category].commands.push(name);
-      }
-
-      // Find the category (case-insensitive)
-      const categoryKey = Object.keys(categories).find(
-        cat => cat.toLowerCase() === categoryName
-      );
-
-      if (!categoryKey) {
-        const availableCategories = Object.keys(categories).sort().join(', ');
-        return await message.reply(
-          `❌ Category "${categoryName}" not found.\n\n` +
-          `Available categories:\n${availableCategories}\n\n` +
-          `Use "${prefix}help" to see all categories.`
-        );
-      }
-
-      const categoryCommands = categories[categoryKey].commands.sort();
-
-      let msg = 
-        `╔══════════════════════════╗\n` +
-        `║    🎀  ${toFancyFont(categoryKey.toUpperCase())} 🎀    ║\n` +
-        `╚══════════════════════════╝\n\n` +
-        `𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝘆: ${categoryKey}\n` +
-        `𝗣𝗿𝗲𝗳𝗶𝘅: ${prefix}\n` +
-        `▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n\n`;
-
-      // Display commands in a grid format
-      const commandsPerLine = 3;
-      for (let i = 0; i < categoryCommands.length; i += commandsPerLine) {
-        const lineCommands = categoryCommands.slice(i, i + commandsPerLine);
-        const line = lineCommands.map(cmd => `• ${cmd}`).join('     ');
-        msg += `${line}\n`;
-      }
-
-      msg += `\n📦 𝗧𝗼𝘁𝗮𝗹 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${categoryCommands.length}`;
-      msg += `\n📖 𝗨𝘀𝗮𝗴𝗲: ${prefix}help <command>`;
-      msg += `\n   to view details of a specific command.\n`;
-      msg += `\n✨ 𝗗𝗲𝘃: 𝗛𝗼𝗽𝗲𝗹𝗲𝘀𝘀 𝗡𝗶𝗹 ✨`;
-
-      return await message.reply(msg);
-    }
-
-    if (!args.length) {
-      const categories = {};
-      let msg = `╔═══════════════════╗\n` +
-        `║    🎀 𝗣𝗢𝗢𝗞𝗜𝗘𝗘 𝗕𝗢𝗧 🎀    ║\n` +
-        `╚═══════════════════╝\n\n` +
-        `𝗛𝗲𝗹𝗽 𝗠𝗲𝗻𝘂 | 𝗣𝗿𝗲𝗳𝗶𝘅: [ ${prefix} ]\n` +
-        `▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n\n`;
-
-      // Get all commands accessible to user's role
-      for (const [name, value] of commands) {
-        if (value.config.role > 1 && role < value.config.role) continue;
-        const category = value.config.category?.en || value.config.category || "Uncategorized";
-        categories[category] = categories[category] || { commands: [] };
-        categories[category].commands.push(name);
-      }
-
-      // Sort categories alphabetically
-      const sortedCategories = Object.keys(categories).sort();
-
-      // Display categories except "info" first
-      for (const category of sortedCategories) {
-        if (category.toLowerCase() !== "info") {
-          msg += `\n╭─❏ ${toFancyFont(category.toUpperCase())}\n`;
-
-          const names = categories[category].commands.sort();
-          let line = "";
-
-          for (let i = 0; i < names.length; i++) {
-            if (i % 4 === 0 && i !== 0) {
-              msg += `│ ${line}\n`;
-              line = "";
-            }
-            line += `• ${names[i]}  `;
-          }
-
-          if (line) {
-            msg += `│ ${line}\n`;
-          }
-          msg += `╰───────────◎\n`;
-        }
-      }
-
-      // Add info category at the end if it exists
-      if (categories.info) {
-        msg += `\n╭─❏ ${toFancyFont("INFO")}\n`;
-
-        const names = categories.info.commands.sort();
-        let line = "";
-
-        for (let i = 0; i < names.length; i++) {
-          if (i % 4 === 0 && i !== 0) {
-            msg += `│ ${line}\n`;
-            line = "";
-          }
-          line += `• ${names[i]}  `;
-        }
-
-        if (line) {
-          msg += `│ ${line}\n`;
-        }
-        msg += `╰───────────◎\n`;
-      }
-
-      const totalCommands = Object.values(categories).reduce((acc, cat) => acc + cat.commands.length, 0);
-
-      msg += `\n📦 𝗧𝗼𝘁𝗮𝗹 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${totalCommands}`;
-      msg += `\n📖 𝗨𝘀𝗮𝗴𝗲: ${prefix}help <command>`;
-      msg += `\n   to view details of that command.`;
-      msg += `\n📖 𝗨𝘀𝗮𝗴𝗲: ${prefix}help c <category>`;
-      msg += `\n   to view all commands in a category.\n`;
-      msg += `\n✨ 𝗗𝗲𝘃: 𝗛𝗼𝗽𝗲𝗹𝗲𝘀𝘀 𝗡𝗶𝗹 ✨`;
-
-      const helpListImages = [
-        "https://i.postimg.cc/8cvDpt37/images-17.jpg",
-        "https://i.postimg.cc/qq2VVghn/received-430815183006013.jpg",
-        "https://i.postimg.cc/KzRxVZDr/received-455361183700405.jpg",
-        "https://i.postimg.cc/MGZW70cL/received-435752262736007.jpg",
-        "https://i.postimg.cc/Pq6d2LY5/received-3200033873462285.jpg",
-      ];
-
-      const helpListImage = helpListImages[Math.floor(Math.random() * helpListImages.length)];
-
-      try {
-        await message.reply({
-          body: msg,
-          attachment: await global.utils.getStreamFromURL(helpListImage)
-        });
-      } catch (error) {
-        // If image fails to load, send text only
-        await message.reply(msg);
-      }
-
-    } else {
-      const commandName = args[0].toLowerCase();
-      const command = commands.get(commandName) || commands.get(aliases.get(commandName));
-
-      if (!command) {
-        await message.reply(`❌ Command "${commandName}" not found. Use ${prefix}help to see all commands.`);
-      } else {
-        // Check if user has permission for this command
-        if (command.config.role > 1 && role < command.config.role) {
-          return await message.reply("⚠️ You don't have permission to use this command.");
-        }
-
-        const configCommand = command.config;
-              const roleText = roleTextToString(configCommand.role);
-              const author = configCommand.author || "Unknown";
-              const description = configCommand.shortDescription?.en || configCommand.longDescription?.en || "No description available.";
-              const longDescription = configCommand.longDescription?.en || description;
-              const guideBody = configCommand.guide?.en || "No guide available.";
-              const usage = guideBody.replace(/{pn}/g, prefix + configCommand.name).replace(/{p}/g, prefix);
-              const aliasesList = configCommand.aliases ? configCommand.aliases.join(", ") : "None";
-
-              // 🌟 Add Premium, Dev, usePrefix, Cost
-              const premium = configCommand.premium === true ? "✅ Yes" : "❌ No";
-              const dev = configCommand.dev === true ? "👑 Yes" : "❌ No";
-              const usePrefix = configCommand.usePrefix === false ? "❌ No (can run without prefix)" : "✅ Yes";
-              const cost = configCommand.cost ? `💰 ${configCommand.cost}` : "Free";
-
-              const response =
-                `╔══════════════════════╗\n` +
-                `║   🎀 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 🎀   ║\n` +
-                `╚══════════════════════╝\n\n` +
-                `✨ 𝗡𝗮𝗺𝗲: ${toFancyFont(configCommand.name)}\n` +
-                `📜 𝗗𝗲𝘀𝗰: ${description}\n\n` +
-                `📋 𝗗𝗲𝘁𝗮𝗶𝗹𝘀:\n` +
-                `• Aliases: ${aliasesList}\n` +
-                `• Author: ${author}\n` +
-                `• Version: ${configCommand.version || "1.0"}\n` +
-                `• Role: ${roleText}\n` +
-                `• Cooldown: ${configCommand.countDown || 1}s\n` +
-                `• Premium: ${premium}\n` +
-                `• Dev Only: ${dev}\n` +
-                `• Use Prefix: ${usePrefix}\n` +
-                `• Cost: ${cost}\n\n` +
-                `📖 𝗨𝘀𝗮𝗴𝗲:\n${usage}\n\n` +
-                `📝 Notes:\n${longDescription}\n\n` +
-                `▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n` +
-                `🌟 Bot by: Hopeless Nil`;
-
-              return await message.reply(response);
-      }
+      en: "{pn} [command name]"
     }
   },
+
+  onStart: async function ({ message, args, prefix }) {
+    const allCommands = global.GoatBot.commands;
+    const botName = global.GoatBot.config.nickNameBot || "YourBot";
+
+    if (!args[0]) {
+      const categories = {};
+      for (const [name, cmd] of allCommands) {
+        const cat = cmd.config.category?.toLowerCase() || "uncategorized";
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(name);
+      }
+
+      const sortedCats = Object.keys(categories).sort();
+      let menu = `✨ ${boldText("COMMAND MENU")} ✨\n\n`;
+
+      for (const cat of sortedCats) {
+        const boldCat = boldText(cat.charAt(0).toUpperCase() + cat.slice(1));
+        const cmds = categories[cat].sort();
+        menu += `🔸 ${boldCat}\n`;
+        menu += `   ${cmds.map(cmd => `🔹 ${cmd}`).join(' ')}\n\n`;
+      }
+
+      menu += `╭────────[ ℹ️ ${boldText("INFO")} ]────────╮\n`;
+      menu += `│ 🤖 ${boldText("Bot")}: ${botName}\n`;
+      menu += `│ 🔣 ${boldText("Prefix")}: ${prefix}\n`;
+      menu += `│ 📦 ${boldText("Total")}: ${allCommands.size} ${boldText("commands")}\n`;
+      menu += `│ 📘 ${boldText("Usage")}: ${prefix}help [command]\n`;
+      menu += `╰──────────────────────────╯`;
+
+      return message.reply(menu);
+    }
+
+    // Detail view
+    const query = args[0].toLowerCase();
+    const cmd = allCommands.get(query) || [...allCommands.values()].find(c => c.config.aliases?.includes(query));
+    if (!cmd) return message.reply(`❌ Command "${query}" not found.`);
+
+    const { name, description, category, aliases, guide, author, usePrefix, role, version } = cmd.config;
+
+    const roleMap = {  
+  0: "👥 Everyone",  
+  1: "👑 Group Admins",  
+  2: "🤖 Bot Admins",  
+  3: "🌟 Premium",  
+  4: "💻 Dev Only"  
+};  
+
+    const usage = guide?.en?.replace(/{pn}/g, prefix + name).replace(/{p}/g, prefix) || `${prefix}${name}`;
+
+    let detail = `╔═[ 🔍 ${boldText("Command Info")}: ${boldText(name)} ]═╗\n`;
+    detail += `║ 📖 ${boldText("Description")}: ${description || "No description"}\n`;
+    detail += `║ 📂 ${boldText("Category")}: ${category || "Uncategorized"}\n`;
+    detail += `║ 🔁 ${boldText("Aliases")}: ${aliases?.join(", ") || "None"}\n`;
+    detail += `║ 🧪 ${boldText("Version")}: v${version || "1.0"}\n`;
+    detail += `║ 👤 ${boldText("Author")}: ${author || "Unknown"}\n`;
+    detail += `🔒 ${boldText("Permission")}: ${roleMap[role] || "Custom"}\n`;
+    detail += `║ 🧷 ${boldText("Usage")}: ${usage}\n`;
+    detail += `╚════════════════════════════╝`;
+
+    return message.reply(detail);
+  }
 };
-
-        function roleTextToString(roleText) {
-          switch (roleText) {
-            case 0: return "0 (All users)";
-            case 1: return "1 (Group admins)";
-            case 2: return "2 (Bot admins)";
-            default: return "Unknown role";
-          }
-        }

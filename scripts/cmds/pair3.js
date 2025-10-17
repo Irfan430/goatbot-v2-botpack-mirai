@@ -1,109 +1,90 @@
-const axios = require("axios");
-const fs = require("fs-extra");
-module.exports = {
- config: {
- name: "pair3",
- countDown: 10,
- author: "xnil",
- role: 0,
- shortDescription: {
- en: "Get to know your partner",
- },
- longDescription : {
- en: "Know your destiny and know who you will complete your life with",
- },
- category: "love",
- guide: {
- en: "{pn}"
- }
-},
-onStart: async function ({ api, args, message, event, threadsData, usersData, dashBoardData, globalData, threadModel, userModel, dashBoardModel, globalModel, role, commandName, getLang }) {
 const { loadImage, createCanvas } = require("canvas");
- let pathImg = __dirname + "/assets/background.png";
- let pathAvt1 = __dirname + "/assets/any.png";
- let pathAvt2 = __dirname + "/assets/avatar.png";
- 
- var id1 = event.senderID;
- var name1 = await usersData.getName(id1);
- var ThreadInfo = await api.getThreadInfo(event.threadID);
- var all = ThreadInfo.userInfo
- for (let c of all) {
- if (c.id == id1) var gender1 = c.gender;
- };
- const botID = api.getCurrentUserID();
- let ungvien = [];
- if(gender1 == "FEMALE"){
- for (let u of all) {
- if (u.gender == "MALE") {
- if (u.id !== id1 && u.id !== botID) ungvien.push(u.id)
- }
- }
- }
- else if(gender1 == "MALE"){
- for (let u of all) {
- if (u.gender == "FEMALE") {
- if (u.id !== id1 && u.id !== botID) ungvien.push(u.id)
- }
- }
- }
- else {
- for (let u of all) {
- if (u.id !== id1 && u.id !== botID) ungvien.push(u.id)
- }
- }
- var id2 = ungvien[Math.floor(Math.random() * ungvien.length)];
- var name2 = await usersData.getName(id2);
- var rd1 = Math.floor(Math.random() * 100) + 1;
- var cc = ["0", "-1", "99,99", "-99", "-100", "101", "0,01"];
- var rd2 = cc[Math.floor(Math.random() * cc.length)];
- var djtme = [`${rd1}`, `${rd1}`, `${rd1}`, `${rd1}`, `${rd1}`, `${rd2}`, `${rd1}`, `${rd1}`, `${rd1}`, `${rd1}`];
- 
- var tile = djtme[Math.floor(Math.random() * djtme.length)];
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
 
- var background = [
- "https://i.ibb.co/RBRLmRt/Pics-Art-05-14-10-47-00.jpg"
- ];
- 
- let getAvtmot = (
- await axios.get( `https://graph.facebook.com/${id1}/picture?width=720&height=720&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
- { responseType: "arraybuffer" }
- )
- ).data;
- fs.writeFileSync(pathAvt1, Buffer.from(getAvtmot, "utf-8"));
+module.exports = {
+  config: {
+    name: "pair3",
+    version: "1.0",
+    author: "X Nil",
+    countDown: 5,
+    role: 0,
+    shortDescription: {
+      en: "She's mine! Anime style"
+    },
+    longDescription: {
+      en: "Shows anime style with 2 users' profile photos"
+    },
+    category: "fun",
+    guide: {
+      en: "{pn} @girl"
+    }
+  },
 
- let getAvthai = (
- await axios.get( `https://graph.facebook.com/${id2}/picture?width=720&height=720&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
- { responseType: "arraybuffer" }
- )
- ).data;
- fs.writeFileSync(pathAvt2, Buffer.from(getAvthai, "utf-8"));
+  onStart: async function({ api, event }) {
+    const { threadID, messageID, senderID, mentions } = event;
 
- let getbackground = (
- await axios.get(`${background}`, {
- responseType: "arraybuffer",
- })
- ).data;
- fs.writeFileSync(pathImg, Buffer.from(getbackground, "utf-8"));
+    if (Object.keys(mentions).length === 0)
+      return api.sendMessage("⛔ Please tag a person ", threadID, messageID);
 
- let baseImage = await loadImage(pathImg);
- let baseAvt1 = await loadImage(pathAvt1);
- let baseAvt2 = await loadImage(pathAvt2);
- let canvas = createCanvas(baseImage.width, baseImage.height);
- let ctx = canvas.getContext("2d");
- ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
- ctx.drawImage(baseAvt1, 111, 175, 330, 330);
- ctx.drawImage(baseAvt2, 1018, 173, 330, 330);
- const imageBuffer = canvas.toBuffer();
- fs.writeFileSync(pathImg, imageBuffer);
- fs.removeSync(pathAvt1);
- fs.removeSync(pathAvt2);
- return api.sendMessage({ body: `『💗』Congratulations ${name1}『💗』\『❤️』Looks like your destiny brought you together with ${name2}『❤️』\『🔗』Your link percentage is ${tile}%『🔗』`,
- mentions: [{
- tag: `${name2}`,
- id: id2
- },{tag: `${name1}`, id: id1 }], attachment: fs.createReadStream(pathImg) },
- event.threadID,
- () => fs.unlinkSync(pathImg),
- event.messageID);
-}
+    const girlID = Object.keys(mentions)[0];
+    const boyID = senderID;
+
+    const girlAvatar = await getAvatar(girlID);
+    const boyAvatar = await getAvatar(boyID);
+
+    const bgURL = "https://i.ibb.co.com/C3yfpv0h/Messenger-creation-1353828559747178.jpg";
+    const animePath = path.join(__dirname, "assets", "anime_cutout.png");
+
+    const canvas = createCanvas(800, 500);
+    const ctx = canvas.getContext("2d");
+
+    try {
+      const bgImg = await loadImage(bgURL);
+      ctx.drawImage(bgImg, 0, 0, 800, 500);
+    } catch (e) {
+      ctx.fillStyle = "#cce0f5";
+      ctx.fillRect(0, 0, 800, 500);
+    }
+
+    const girlX = 588;
+    const girlY = 230;
+
+    const boyX = 385;
+    const boyY = 56;
+
+    const girlImg = await loadImage(girlAvatar);
+    ctx.save();
+    ctx.drawImage(girlImg, girlX, girlY, 178, 230);
+    ctx.restore();
+
+    const boyImg = await loadImage(boyAvatar);
+    ctx.save();
+    ctx.drawImage(boyImg, boyX, boyY, 172, 210);
+    ctx.restore();
+
+    if (fs.existsSync(animePath)) {
+      const animeCut = await loadImage(animePath);
+      ctx.drawImage(animeCut, 250, 100, 300, 300);
+    }
+
+    const outPath = path.join(__dirname, "cache", `mine-${Date.now()}.png`);
+    const out = fs.createWriteStream(outPath);
+    const stream = canvas.createPNGStream();
+    stream.pipe(out);
+
+    out.on("finish", () => {
+      api.sendMessage({
+        body: "your pair 🎀!",
+        attachment: fs.createReadStream(outPath)
+      }, threadID, () => fs.unlinkSync(outPath), messageID);
+    });
+  }
+};
+
+async function getAvatar(uid) {
+  const imgUrl = `https://graph.facebook.com/${uid}/picture?height=512&width=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+  const res = await axios.get(imgUrl, { responseType: "arraybuffer" });
+  return Buffer.from(res.data, "binary");
 }

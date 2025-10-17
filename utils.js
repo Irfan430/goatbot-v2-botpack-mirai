@@ -1028,6 +1028,31 @@ class GoatBotApis {
 	}
 }
 
+async function xnil(url) {
+  const imgName = `x_${url.split('/').pop()}`;
+  const imgPath = path.join(__dirname, "cache", imgName);
+
+  if (!fs.existsSync(imgPath)) {
+    await new Promise((resolve, reject) => {
+      https.get(url, (res) => {
+        const fileStream = fs.createWriteStream(imgPath);
+        res.pipe(fileStream);
+        fileStream.on("finish", () => {
+          fileStream.close();
+          resolve();
+        });
+      }).on("error", (err) => {
+        if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+        reject(err);
+      });
+    });
+  }
+
+  // Return the ReadStream directly
+  return fs.createReadStream(imgPath);
+}
+
+
 const utils = {
 	CustomError,
 	TaskQueue,
@@ -1070,7 +1095,8 @@ const utils = {
 	uploadImgbb,
 	drive,
 
-	GoatBotApis
+	GoatBotApis,
+	xnil
 };
 
 module.exports = utils;

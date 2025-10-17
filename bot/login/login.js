@@ -15,7 +15,9 @@ const path = defaultRequire("path");
 const readline = defaultRequire("readline");
 const fs = defaultRequire("fs-extra");
 const toptp = defaultRequire("totp-generator");
-const login = defaultRequire(`${process.cwd()}/fb-chat-api`);
+//const { login } = defaultRequire("ws3-fca");
+//const login = defaultRequire(`${process.cwd()}/fb-chat-api`);
+const login = defaultRequire("priyanshu-fca");
 const qr = new (defaultRequire("qrcode-reader"));
 const Canvas = defaultRequire("canvas");
 const https = defaultRequire("https");
@@ -661,29 +663,29 @@ async function startBot(loginWithEmail) {
 
 		let isSendNotiErrorMessage = false;
 
-		login({ appState }, global.GoatBot.config.optionsFca, async function (error, api) {
-			if (!isNaN(facebookAccount.intervalGetNewCookie) && facebookAccount.intervalGetNewCookie > 0)
-				if (facebookAccount.email && facebookAccount.password) {
-					spin?._stop();
-					log.info("REFRESH COOKIE", getText('login', 'refreshCookieAfter', convertTime(facebookAccount.intervalGetNewCookie * 60 * 1000, true)));
+		login({ appState }, global.GoatBot.config.optionsFca, async (error, api) => {
+			if (error) return console.error(error);
+
+			// Refresh cookie setup
+			if (!isNaN(facebookAccount.intervalGetNewCookie) && facebookAccount.intervalGetNewCookie > 0 &&
+					facebookAccount.email && facebookAccount.password) {
+
 					setTimeout(async function refreshCookie() {
-						try {
-							log.info("REFRESH COOKIE", getText('login', 'refreshCookie'));
-							const appState = await getAppStateFromEmail(undefined, facebookAccount);
-							if (facebookAccount.i_user)
-								pushI_user(appState, facebookAccount.i_user);
-							changeFbStateByCode = true;
-							writeFileSync(dirAccount, JSON.stringify(filterKeysAppState(appState), null, 2));
-							setTimeout(() => changeFbStateByCode = false, 1000);
-							log.info("REFRESH COOKIE", getText('login', 'refreshCookieSuccess'));
-							return startBot(appState);
-						}
-						catch (err) {
-							log.err("REFRESH COOKIE", getText('login', 'refreshCookieError'), err.message, err);
-							setTimeout(refreshCookie, facebookAccount.intervalGetNewCookie * 60 * 1000);
-						}
+							try {
+									log.info("REFRESH COOKIE", getText('login', 'refreshCookie'));
+									const appStateNew = await getAppStateFromEmail(undefined, facebookAccount);
+									if (facebookAccount.i_user) pushI_user(appStateNew, facebookAccount.i_user);
+									changeFbStateByCode = true;
+									writeFileSync(dirAccount, JSON.stringify(filterKeysAppState(appStateNew), null, 2));
+									setTimeout(() => changeFbStateByCode = false, 1000);
+									log.info("REFRESH COOKIE", getText('login', 'refreshCookieSuccess'));
+									startFca(); // Restart bot with new state
+							} catch (err) {
+									log.err("REFRESH COOKIE", getText('login', 'refreshCookieError'), err.message, err);
+									setTimeout(refreshCookie, facebookAccount.intervalGetNewCookie * 60 * 1000);
+							}
 					}, facebookAccount.intervalGetNewCookie * 60 * 1000);
-				}
+			}
 				else {
 					spin?._stop();
 					log.warn("REFRESH COOKIE", getText('login', 'refreshCookieWarning'));
