@@ -6,8 +6,10 @@ module.exports = {
     aliases: ["editimg"],
     version: "1.1",
     author: "X Nil",
+    premium: true,
     countDown: 5,
     role: 0,
+    cost: "100",
     shortDescription: {
       en: "Edit image with girl behind",
     },

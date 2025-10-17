@@ -89,8 +89,8 @@ const { correctAnswer, nameUser, author } = Reply;
         if (userReply === correctAnswer.toLowerCase()) {
           api.unsendMessage(Reply.messageID)
           .catch(console.error);
-          let rewardCoins = 300;
-          let rewardExp = 100;
+          let rewardCoins = 3000;
+          let rewardExp = 300;
           let userData = await usersData.get(author);
           await usersData.set(author, {
           money: userData.money + rewardCoins,

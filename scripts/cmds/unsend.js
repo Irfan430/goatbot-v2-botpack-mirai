@@ -1,7 +1,9 @@
+const { GoatWrapper } = require("fca-liane-utils");
+
 module.exports = {
 	config: {
 		name: "unsend",
-		aliases: ['u', 'uns', 'r',],
+		aliases: ["rmv", "u", "uns"],
 		version: "1.2",
 		author: "NTKhang",
 		countDown: 5,
@@ -12,23 +14,23 @@ module.exports = {
 		},
 		category: "box chat",
 		guide: {
-			vi: "reply tin nhắn muốn gỡ của bot và gọi lệnh {pn}",
-			en: "reply the message you want to unsend and call the command {pn}"
+			vi: "Reply tin nhắn muốn gỡ của bot và dùng lệnh {pn}",
+			en: "Reply the bot's message you want to unsend and use {pn}"
 		}
 	},
 
-	langs: {
-		vi: {
-			syntaxError: "Vui lòng reply tin nhắn muốn gỡ của bot"
-		},
-		en: {
-			syntaxError: "Please reply the message you want to unsend"
-		}
-	},
+	onStart: async function ({ message, event, api }) {
+		const reply = event.messageReply;
+		if (!reply || reply.senderID !== api.getCurrentUserID()) return;
 
-	onStart: async function ({ message, event, api, getLang }) {
-		if (!event.messageReply || event.messageReply.senderID != api.getCurrentUserID())
-			return message.reply(getLang("syntaxError"));
-		message.unsend(event.messageReply.messageID);
+		try {
+			await api.unsendMessage(reply.messageID);
+		} catch (err) {
+			message.reply("❌ Failed to unsend message. It may have already been deleted.");
+			console.error("Unsend error:", err);
+		}
 	}
 };
+
+const wrapper = new GoatWrapper(module.exports);
+wrapper.applyNoPrefix({ allowPrefix: true });

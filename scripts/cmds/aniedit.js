@@ -7,6 +7,7 @@ module.exports = {
     version: "1.2",
     author: "X Nil",
     countDown: 5,
+    premium: true,
     role: 0,
     shortDescription: {
       en: "Edit image anime style",

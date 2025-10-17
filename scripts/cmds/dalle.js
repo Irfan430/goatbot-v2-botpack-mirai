@@ -8,6 +8,7 @@ module.exports = {
     name: "dalle",
     aliases: ["bing", "create", "imagine"],
     version: "1.0",
+    premium: true,
     author: "Dipto",
     countDown: 15,
     role: 0,

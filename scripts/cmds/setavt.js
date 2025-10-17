@@ -7,7 +7,7 @@ module.exports = {
 		version: "1.3",
 		author: "NTKhang",
 		countDown: 5,
-		role: 4,
+		role: 2,
 		description: {
 			vi: "Đổi avatar bot",
 			en: "Change bot avatar"
