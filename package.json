@@ -9,6 +9,7 @@
 	},
 	"dependencies": {
 		"@distube/ytdl-core": "^4.13.3",
+		"@dongdev/fca-unofficial": "^2.0.26",
 		"axios": "^1.4.0",
 		"axios-cookiejar-support": "^6.0.4",
 		"bcrypt": "^5.0.1",
