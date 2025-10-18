@@ -5,11 +5,8 @@
     "domain": "facebook.com",
     "path": "/",
     "hostOnly": false,
-    "creation": "2025-10-18T05:19:26.322Z",
-    "lastAccessed": "2025-10-18T05:19:30.268Z",
-    "secure": false,
-    "httpOnly": false,
-    "expires": "2026-10-18T05:19:26.000Z"
+    "creation": "2025-10-18T05:50:07.532Z",
+    "lastAccessed": "2025-10-18T05:50:09.628Z"
   },
   {
     "key": "sb",
@@ -17,11 +14,8 @@
     "domain": "facebook.com",
     "path": "/",
     "hostOnly": false,
-    "creation": "2025-10-18T05:19:26.337Z",
-    "lastAccessed": "2025-10-18T05:19:30.268Z",
-    "secure": false,
-    "httpOnly": false,
-    "expires": "2026-10-18T05:19:26.000Z"
+    "creation": "2025-10-18T05:50:07.569Z",
+    "lastAccessed": "2025-10-18T05:50:09.628Z"
   },
   {
     "key": "c_user",
@@ -29,11 +23,8 @@
     "domain": "facebook.com",
     "path": "/",
     "hostOnly": false,
-    "creation": "2025-10-18T05:19:26.339Z",
-    "lastAccessed": "2025-10-18T05:19:30.268Z",
-    "secure": false,
-    "httpOnly": false,
-    "expires": "2026-10-18T05:19:26.000Z"
+    "creation": "2025-10-18T05:50:07.573Z",
+    "lastAccessed": "2025-10-18T05:50:09.628Z"
   },
   {
     "key": "xs",
@@ -41,22 +32,23 @@
     "domain": "facebook.com",
     "path": "/",
     "hostOnly": false,
-    "creation": "2025-10-18T05:19:26.340Z",
-    "lastAccessed": "2025-10-18T05:19:30.268Z",
-    "secure": false,
-    "httpOnly": false,
-    "expires": "2026-10-18T05:19:26.000Z"
+    "creation": "2025-10-18T05:50:07.575Z",
+    "lastAccessed": "2025-10-18T05:50:09.628Z"
   },
   {
     "key": "fr",
-    "value": "0MOeatYeH9TovWbmJ.AWdSeozzzAsnyLXTyB2REZbV-bQqwuV0UWJiSDxdOJt7fktml1k.Bo8rxd..AAA.0.0.Bo8yNe.AWfJ97wwMUuWvZX317yetvfT-5M",
+    "value": "0MOeatYeH9TovWbmJ.AWcsyJkH0Xg7QwgXUvjoIgHFoGeF9DYPNDnUJfxzJhzg3hbPlWg.Bo8rxd..AAA.0.0.Bo8yqQ.AWd1WXbRmtgtm4WvEJ33Hd6lU5I",
+    "expires": "2026-01-16T05:50:08.000Z",
+    "maxAge": 7776000,
     "domain": "facebook.com",
     "path": "/",
-    "hostOnly": false,
-    "creation": "2025-10-18T05:19:26.340Z",
-    "lastAccessed": "2025-10-18T05:19:30.268Z",
     "secure": true,
     "httpOnly": true,
-    "expires": "2026-01-16T05:19:26.000Z"
+    "extensions": [
+      "SameSite=None"
+    ],
+    "hostOnly": false,
+    "creation": "2025-10-18T05:50:07.577Z",
+    "lastAccessed": "2025-10-18T05:50:09.628Z"
   }
 ]
