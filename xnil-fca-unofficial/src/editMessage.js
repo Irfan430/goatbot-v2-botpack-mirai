@@ -1,44 +1,68 @@
-"use strict";
+"use_strict";
+/**
+* @author RFS-ADRENO
+* @rewrittenBy Isai Ivanov
+*/
+const generateOfflineThreadingId = require('../utils');
 
-var utils = require("../utils");
-var log = require("npmlog");
+function canBeCalled(func) {
+    try {
+        Reflect.apply(func, null, []);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+* A function for editing bot's messages.
+* @param {string} text - The text with which the bot will edit its messages.
+* @param {string} messageID - The message ID of the message the bot will edit.
+* @param {Object} callback - Callback for the function.
+*/
 
 module.exports = function (defaultFuncs, api, ctx) {
-  return function deleteMessage(messageOrMessages, callback) {
-    var resolveFunc = function () { };
-    var rejectFunc = function () { };
-    var returnPromise = new Promise(function (resolve, reject) {
-      resolveFunc = resolve;
-      rejectFunc = reject;
-    });
-    if (!callback) {
-      callback = function (err) {
-        if (err) return rejectFunc(err);
+    return function editMessage(text, messageID, callback) {
+        if (!ctx.mqttClient) {
+            throw new Error('Not connected to MQTT');
+        }
 
-        resolveFunc();
-      };
-    }
+        ctx.wsReqNumber += 1;
+        ctx.wsTaskNumber += 1;
 
-    var form = {
-      client: "mercury"
+        const queryPayload = {
+            message_id: messageID,
+            text: text
+        };
+
+        const query = {
+            failure_count: null,
+            label: '742',
+            payload: JSON.stringify(queryPayload),
+            queue_name: 'edit_message',
+            task_id: ctx.wsTaskNumber
+        };
+
+        const context = {
+            app_id: '2220391788200892',
+            payload: {
+                data_trace_id: null,
+                epoch_id: parseInt(generateOfflineThreadingId),
+                tasks: [query],
+                version_id: '6903494529735864'
+            },
+            request_id: ctx.wsReqNumber,
+            type: 3
+        };
+
+        context.payload = JSON.stringify(context.payload);
+
+        // if (canBeCalled(callback)) {
+        // 	ctx.reqCallbacks[ctx.wsReqNumber] = callback;
+        // }
+
+        ctx.mqttClient.publish('/ls_req', JSON.stringify(context), {
+            qos: 1, retain: false
+        });
     };
-
-    if (utils.getType(messageOrMessages) !== "Array") messageOrMessages = [messageOrMessages];
-
-    for (var i = 0; i < messageOrMessages.length; i++) form["message_ids[" + i + "]"] = messageOrMessages[i];
-
-    defaultFuncs
-      .post("https://www.facebook.com/ajax/mercury/delete_messages.php", ctx.jar, form)
-      .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-      .then(function (resData) {
-        if (resData.error) throw resData;
-        return callback();
-      })
-      .catch(function (err) {
-        log.error("deleteMessage", err);
-        return callback(err);
-      });
-
-    return returnPromise;
-  };
 };
