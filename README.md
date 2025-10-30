@@ -16,9 +16,9 @@
     </td>
     <td align="center">
       <a href="https://github.com/xnil6x-obito">
-        <img src="https://avatars.githubusercontent.com/u/221610963?v=4" width="100px;" alt="XNIL6X"/>
+        <img src="https://avatars.githubusercontent.com/u/108590422?v=4" width="100px;" alt="XNIL6X"/>
         <br/>
-        <sub><b>XNIL6X OBITO</b></sub>
+        <sub><b>XNIL6X404 OBITO</b></sub>
       </a>
       <br/>
       <span>Remodified & error Fix </span>
@@ -36,12 +36,14 @@ module.exports = {
     name: "command_name",                // 🔹 Command Name  
     version: "1.0",                      // 🔸 Version  
     author: "xnil6x",                    // 👨‍💻 Developer  
-    role: 4,                             // 🔐 Required Access Level  
+    role: 2,                             // 🔐 Required Access Level  
     usePrefix: true,                     // ⛓️ Prefix Requirement  
     description: "Command Description",   // 📝 Functionality  
     guide: "Usage Guide",                // 📘 Command Syntax  
     category: "Utility",                 // 🧰 Function Category  
-    cooldowns: 3                         // ⏳ Execution Delay (seconds)  
+    cooldowns: 3,
+    dev: true,
+    premium: true                       
   }  
 };
 ```
@@ -49,14 +51,13 @@ module.exports = {
 ---
 
 ## 🔐 Role Hierarchy System
+## dev.js premium.js available check 
 
 | Level | Badge | Access Tier            | Description                  |
 |-------|-------|-----------------------|------------------------------|
 | 0     | 👥    | Standard User         | All regular members          |
 | 1     | ⚔️    | Group admin       | Chat administrators          |
 | 2     | 🤖    | Bot admin           | Bot configuration access     |
-| 3     | 💎    | Premium User          | VIP command privileges       |
-| 4     | 👑    | System Developer      | Full system control          |
 
 ---
 
@@ -65,6 +66,11 @@ module.exports = {
 ### ⚙️ Configuration Options
 - **Prefix Control**  
   → `usePrefix: true/false` for command trigger flexibility
+- **premium Control**  
+  → `premium: true/false` for command trigger flexibility
+  - **dev Control**  
+  → `dev: true/false` for command trigger flexibility
+
 
 
 
